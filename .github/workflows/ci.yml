@@ -16,7 +16,7 @@ jobs:
       - name: Get deluge version
         id: deluge_version
         run: |
-          pip install -q pkgfile
+          pip install -q pkginfo
           pip wheel --no-deps -r requirements.txt
           VERSION=$(pkginfo *.whl -f version --single)
           echo $VERSION
