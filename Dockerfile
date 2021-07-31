@@ -7,7 +7,7 @@ RUN apk add --no-cache gcc git libffi-dev cargo zlib-dev jpeg-dev openssl-dev py
 FROM alpine:3.14.0
 MAINTAINER 'Byeonghoon Isac Yoo <bh322yoo@gmail.com>'
 ENTRYPOINT ["/home/deluged/.local/bin/deluged"]
-EXPOSE 6881 6881/UDP
+EXPOSE 58846 58846/UDP
 WORKDIR /home/deluged
 
 COPY --from=builder /tmp/wheels /tmp/wheels
