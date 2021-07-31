@@ -6,12 +6,15 @@ RUN apk add --no-cache gcc git libffi-dev cargo zlib-dev jpeg-dev openssl-dev py
 
 FROM alpine:3.14.0
 MAINTAINER 'Byeonghoon Isac Yoo <bh322yoo@gmail.com>'
-ENTRYPOINT ["/root/.local/bin/deluged"]
+ENTRYPOINT ["/home/deluged/.local/bin/deluged"]
 EXPOSE 6881 6881/UDP
+WORKDIR /home/deluged
 
 COPY --from=builder /tmp/wheels /tmp/wheels
 COPY --from=builder /libtorrent-build /
-RUN apk add --no-cache boost-python3 py3-pip py3-wheel \
-    && pip install --force-reinstall --user --no-warn-script-location --no-cache-dir --no-deps /tmp/wheels/*.whl  \
+RUN adduser deluged -D  \
+    && apk add --no-cache boost-python3 py3-pip py3-wheel \
+    && su - deluged -c 'pip install --force-reinstall --no-warn-script-location --no-cache-dir --no-deps /tmp/wheels/*.whl'  \
     && rm -rf /tmp \
     && apk del py3-pip py3-wheel
+USER deluged
