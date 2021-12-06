@@ -1,4 +1,4 @@
-FROM wiserain/libtorrent:2.0.4-alpine3.14 AS builder
+FROM wiserain/libtorrent:2.0.5-alpine3.14 AS builder
 
 COPY requirements.txt /tmp
 RUN apk add --no-cache gcc git libffi-dev cargo zlib-dev jpeg-dev openssl-dev py3-pip py3-wheel python3-dev \
