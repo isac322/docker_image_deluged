@@ -4,7 +4,7 @@ COPY requirements.txt /tmp
 RUN apk add --no-cache gcc git libffi-dev cargo zlib-dev jpeg-dev openssl-dev py3-pip py3-wheel python3-dev \
     && pip wheel --no-cache-dir -r /tmp/requirements.txt --wheel-dir /tmp/wheels
 
-FROM alpine:3.15.4
+FROM alpine:3.16.1
 MAINTAINER 'Byeonghoon Isac Yoo <bh322yoo@gmail.com>'
 ENTRYPOINT ["/home/deluged/.local/bin/deluged"]
 EXPOSE 58846 58846/UDP
