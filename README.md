@@ -21,8 +21,8 @@ Supported platform: `linux/amd64`, `linux/arm64/v8`
 
 ## Command
 
-Default Entrypoint of image is `deluged` and no default for command.
+Default entrypoint of image is `deluged` and `--do-not-daemonize --port 58846 --ui-interface 0.0.0.0 --interface 0.0.0.0` for default command.
 
 ## How to run
 
-`docker run -p 58846:58846 -ti isac322/deluged` will launch deluge daemon. You can append ` -d` to prevent daemonize.
+`docker run -p 58846:58846 -ti isac322/deluged` will launch deluge daemon.
