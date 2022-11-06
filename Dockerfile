@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.2
 
-FROM python:3.10-alpine AS builder
+FROM python:3.11.0-alpine AS builder
 
 ARG VERSION
 
@@ -9,7 +9,7 @@ RUN if ! [ "$(uname -m)" = 'x86_64' ]; then apk add --update libtorrent-rasterba
 RUN pip wheel -w /tmp/wheel deluge==${VERSION} libtorrent GeoIP
 
 
-FROM python:3.10-alpine
+FROM python:3.11.0-alpine
 MAINTAINER 'Byeonghoon Isac Yoo <bhyoo@bhyoo.com>'
 CMD ["--do-not-daemonize", "--port", "58846", "--ui-interface", "0.0.0.0", "--interface", "0.0.0.0"]
 RUN adduser deluged -D \
