@@ -1,20 +1,26 @@
-FROM wiserain/libtorrent:2.0.5-alpine3.14 AS builder
+# syntax=docker/dockerfile:1.2
 
-COPY requirements.txt /tmp
-RUN apk add --no-cache gcc git libffi-dev cargo zlib-dev jpeg-dev openssl-dev py3-pip py3-wheel python3-dev \
-    && pip wheel --no-cache-dir -r /tmp/requirements.txt --wheel-dir /tmp/wheels
+FROM python:3.10-alpine AS builder
 
-FROM alpine:3.15.4
-MAINTAINER 'Byeonghoon Isac Yoo <bh322yoo@gmail.com>'
-ENTRYPOINT ["/home/deluged/.local/bin/deluged"]
-EXPOSE 58846 58846/UDP
-WORKDIR /home/deluged
+ARG VERSION
 
-COPY --from=builder /tmp/wheels /tmp/wheels
-COPY --from=builder /libtorrent-build /
-RUN adduser deluged -D  \
-    && apk add --no-cache boost-python3 py3-pip py3-wheel \
-    && su - deluged -c 'pip install --force-reinstall --no-warn-script-location --no-cache-dir --no-deps /tmp/wheels/*.whl'  \
-    && rm -rf /tmp \
-    && apk del py3-pip py3-wheel
+RUN apk add --update gcc musl-dev geoip-dev
+RUN if ! [ "$(uname -m)" = 'x86_64' ]; then apk add --update libtorrent-rasterbar-dev libffi-dev; fi
+RUN pip wheel -w /tmp/wheel deluge==${VERSION} libtorrent GeoIP
+
+
+FROM python:3.10-alpine
+MAINTAINER 'Byeonghoon Isac Yoo <bhyoo@bhyoo.com>'
+CMD ["--do-not-daemonize", "--port", "58846", "--ui-interface", "0.0.0.0", "--interface", "0.0.0.0"]
+RUN adduser deluged -D \
+    && su - deluged -c 'mkdir -p ~/.config/deluge' \
+    && apk add --update --no-cache libtorrent-rasterbar geoip \
+    && rm -rf /var/cache/apk
 USER deluged
+ENTRYPOINT ["/home/deluged/.local/bin/deluged"]
+ENV PATH="${PATH}:/home/deluged/.local/bin"
+VOLUME ["/home/deluged/.config/deluge", "/usr/share/GeoIP"]
+EXPOSE 58846
+
+RUN --mount=type=bind,target=/tmp/wheel,from=builder,source=/tmp/wheel \
+    pip install --user --no-cache-dir --no-warn-script-location --no-index --compile /tmp/wheel/*.whl

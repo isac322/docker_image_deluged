@@ -1,71 +1,52 @@
 name: ci
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
 
 jobs:
-  deluge_version:
+  build_image:
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.deluge_version.outputs.version }}
+    env:
+      PLATFORMS: linux/amd64,linux/arm64/v8
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v34
+        with:
+          files: |
+            Dockerfile
+            requirements.txt
+
       - name: Get deluge version
         id: deluge_version
+        if: steps.changed-files.outputs.any_changed == 'true'
         run: |
-          pip install -q pkginfo
-          pip wheel --no-deps -r requirements.txt
-          VERSION=$(pkginfo *.whl -f version --single)
+          VERSION=$(python -c "from pkg_resources import parse_requirements; print(next(filter(lambda r: r.name == 'deluge', parse_requirements(open('requirements.txt').read()))).specs[0][1])")
           echo $VERSION
-          echo "::set-output name=version::${VERSION}"
-  docker:
-    runs-on: ubuntu-latest
-    needs: deluge_version
-    env:
-      PLATFORMS: linux/amd64,linux/arm64/v8  #,linux/arm/v7
-      DOCKERHUB_USERNAME: isac322
-    steps:
-      - uses: actions/checkout@v3
-      - name: Docker meta
-        id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v4.0.1
-        with:
-          flavor: latest=true
-          images: ${{ env.DOCKERHUB_USERNAME }}/deluged
-          tags: |
-            type=raw,value=${{ needs.deluge_version.outputs.version }}
-          labels: |
-            maintainer=${{ env.DOCKERHUB_USERNAME }}
-            org.opencontainers.image.title=deluged
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
       - name: Set up QEMU
-        id: qemu
+        if: steps.changed-files.outputs.any_changed == 'true'
         uses: docker/setup-qemu-action@v2
         with:
           platforms: ${{ env.PLATFORMS }}
+
       - name: Set up Docker Buildx
+        if: steps.changed-files.outputs.any_changed == 'true'
         uses: docker/setup-buildx-action@v2
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
         with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
-        id: docker_build
+          platforms: ${{ env.PLATFORMS }}
+
+      - name: Build
+        if: steps.changed-files.outputs.any_changed == 'true'
         uses: docker/build-push-action@v3
         with:
-          push: ${{ github.event_name != 'pull_request' }}
+          push: false
+          build-args: |
+            VERSION=${{ steps.deluge_version.outputs.version }}
           platforms: ${{ env.PLATFORMS }}
-          tags: ${{ steps.docker_meta.outputs.tags }}
-          labels: ${{ steps.docker_meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.DOCKERHUB_USERNAME }}/deluged:latest
-          cache-to: type=registry,ref=${{ env.DOCKERHUB_USERNAME }}/deluged:_buildcache,mode=max
-      - name: Update repo description
-        if: github.event_name != 'pull_request'
-        uses: peter-evans/dockerhub-description@v3
-        with:
-          username: ${{ env.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          repository: ${{ env.DOCKERHUB_USERNAME }}/deluged
+          cache-from: type=gha
