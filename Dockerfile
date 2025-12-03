@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-FROM python:3.13.2-alpine AS builder
+FROM python:3.14.1-alpine AS builder
 
 ARG VERSION
 
@@ -9,7 +9,7 @@ RUN apk add --update gcc musl-dev geoip-dev
 RUN pip wheel -w /tmp/wheel deluge==${VERSION} libtorrent==2.0.11 GeoIP==1.3.2 chardet==5.2.0 ifaddr==0.2.0
 
 
-FROM python:3.13.2-alpine
+FROM python:3.14.1-alpine
 ENV DELUGED_USER='deluged' \
     DELUGED_UID=1000 \
     DELUGED_GID=1000
