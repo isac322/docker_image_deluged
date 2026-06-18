@@ -10,7 +10,7 @@ jobs:
     env:
       PLATFORMS: linux/amd64,linux/arm64/v8
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
